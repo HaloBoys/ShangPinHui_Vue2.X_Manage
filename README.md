@@ -52,9 +52,52 @@ devServer.proxy：https://www.webpackjs.com/configuration/dev-server/#devserver-
 
 ## 路由配置
 
+# 全局组件封装
 
+## 三级联动
 
-# 项目功能逻辑
+```html
+<template>
+  <div>
+    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+      <el-form-item label="一级分类">
+        <el-select v-model="formInline.region" placeholder="请选择">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="二级分类">
+        <el-select v-model="formInline.region" placeholder="请选择">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item label="三级分类">
+        <el-select v-model="formInline.region" placeholder="请选择">
+          <el-option label="区域一" value="shanghai"></el-option>
+          <el-option label="区域二" value="beijing"></el-option>
+        </el-select>
+      </el-form-item>
+    </el-form>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "CategorySelect",
+
+  data() {
+    return {
+      formInline: {
+        region: "",
+      },
+    };
+  }
+};
+</script>
+```
+
+# 项目功能开发
 
 ## 登录与退出登录
 
@@ -284,7 +327,35 @@ this.$refs.trademarkForm.validate(async (valid) => {
 
 ### 属性管理
 
+#### 静态组件搭建
 
+1. Card 卡片作为容器
+2. 卡片里面嵌套三级联动全局组件
+
+#### 三级联动动态数据
+
+1. 编写获取分类相关 API（二级分类根据一级分了id获取，三级分类根据二级分类id获取）
+   1. GET /admin/product/getCategory1
+   2. GET /admin/product/getCategory2/{category1Id}
+   3. GET /admin/product/getCategory3/{category2Id}
+2. 三级联动组件 mounted 生命周期函数中调用获取一级分类方法，获取的数据存储在 data 中
+3. el-option 组件循环渲染数据展示，并通过 el-option 的 `:value` 属性收集一级分类的 id，保存于 data 自定义对象中，el-select v-model 绑定这个 id
+4. 一级分类 el-option 绑定 change 事件，事件回调中根据 id 获取二级分类列表并渲染
+5. 二级分类 el-option 绑定 change 事件，事件回调中根据 id 获取三级分类列表并渲染
+6. 三级分类 el-option 绑定 change 事件
+7. 一二级分类二次选择清空逻辑
+   1. 当一级分类发生变化，清空二三级数据列表与 id
+   2. 当二级分类发生变化，清空三级数据列表与 id
+
+#### 获取分类属性
+
+商品基础属性接口 API: /admin/product/attrInfoList/{category1Id}/{category2Id}/{category3Id}
+Method: GET
+
+1. 分类 change 事件回调中将分类 id 通过自定义事件发送给父组件，并加上标识用于区分一二三级分类
+2. attrManage 组件在自定义事件回调中接收到传过来的 id，并保存，
+3. 收集完毕，调用接口请求数据
+4. 数据在 attrManage 组件表格中展示
 
 ### SKU管理
 

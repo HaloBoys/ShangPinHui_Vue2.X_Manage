@@ -30,6 +30,14 @@ if (process.env.NODE_ENV === 'production') {
   mockXHR()
 }
 
+// 全局组件
+
+import CategorySelect from "@/components/CategorySelect"
+
+// 全局组件注册
+
+Vue.component("CategorySelect", CategorySelect)
+
 // set ElementUI lang to EN
 Vue.use(ElementUI, {
   locale
