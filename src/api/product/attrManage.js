@@ -35,3 +35,26 @@ export const reqGetAttrInfoList = (catInfo) => request({
   url: `/admin/product/attrInfoList/${catInfo.catList1id}/${catInfo.catList2id}/${catInfo.catList3id}`,
   method: "get"
 })
+
+/* 
+  API: /admin/product/saveAttrInfo
+  Method: POST
+  参数格式:
+  {
+    "attrName": "string",
+    "attrValueList": [
+      {
+        "attrId": 0,
+        "valueName": "string"
+      }
+    ],
+    "categoryId": 0,
+    "categoryLevel": 0,
+  }
+*/
+
+export const reqaddOrUpdateAttrSave = (data) => request({
+  url: `/admin/product/saveAttrInfo`,
+  method: "post",
+  data
+})

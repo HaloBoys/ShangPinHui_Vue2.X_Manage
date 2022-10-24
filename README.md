@@ -97,18 +97,16 @@ export default {
 </script>
 ```
 
-# 项目功能开发
+# 登录与退出登录
 
-## 登录与退出登录
-
-### API
+## API
 
 1. 将 `api>user.js` 中的相关接口地址换成项目的接口地址
 2. 编辑 `utils>request.js` 
 将请求拦截器中 X-Token 换成 token 字段
 将响应拦截器中状态码判断逻辑更换 `if (res.code !== 20000 && res.code != 200)`
 
-### 登录
+## 登录
 
 用户登录 actions 重构成 async await 写法
 
@@ -133,15 +131,15 @@ async login({
 },
 ```
 
-### 退出登录
+## 退出登录
 
 将 Navbar 组件中退出登录文字替换即可
 
-## 商品管理
+# 商品管理
 
-### 品牌管理
+## 品牌管理
 
-#### 请求品牌列表 API
+### 请求品牌列表 API
 
 1. 在 api 文件夹下创建 `product> tradeMark.js`
 2. 编写请求品牌列表接口：`/admin/product/baseTrademark/{page}/{limit}`
@@ -163,7 +161,7 @@ export const reqTradeMarkList = (page,limit) => request({
    3. total（服务器返回的总共数据条数）
    4. list（服务器返回的品牌列表数据）
 
-#### el-table 组件渲染数据
+### el-table 组件渲染数据
 
 > el-table 组件展示的数据是以一列一列进行展示
 
@@ -178,14 +176,14 @@ export const reqTradeMarkList = (page,limit) => request({
    2. 编辑按钮
    3. 删除按钮
 
-#### el-pagination 分页数据绑定
+### el-pagination 分页数据绑定
 
 1. 相关数据跟data绑定
 2. 事件
    1. @size-change 每页条数
    2. @current-change 当前页码
 
-#### dialog
+### dialog
 
 添加/修改品牌对话框(复用)
 
@@ -194,7 +192,7 @@ export const reqTradeMarkList = (page,limit) => request({
    1. input
    2. upload
 
-#### 添加/修改品牌 API
+### 添加/修改品牌 API
 
 添加/修改品牌 API：(复用)
 
@@ -230,7 +228,7 @@ export const reqAddOrUpdateTradeMark = (trademarkinfo) => {
 }
 ```
 
-#### 添加品牌
+### 添加品牌
 
 1. 收集品牌相关数据（品牌名称和品牌logo）
    1. 品牌名称: form 绑定 :model="xxx" 将用户输入绑定到 data 的对象中，xxx 是一个对象，里面的属性根据接口来写
@@ -260,14 +258,14 @@ async addOrUpdateConfirm() {
 },
 ```
 
-#### 修改品牌
+### 修改品牌
 
 1. 作用域插槽中的 row 就是对应品牌的信息，传递给修改对应的回调
 2. 在回调中将对应的值同步到 data 进行展示（注意此处浅拷贝，防止表格数据直接被修改）
 3. 点击确定刷新列表时，保持之前的页码
 4. dialog title 根据 tradeInfo 中是否包含 id 动态展示 `:title="tradeInfo.id ? '修改品牌' : '添加品牌'"`
 
-#### dialog 表单验证
+### dialog 表单验证
 
 > Form 组件提供了表单验证的功能，只需要通过 rules 属性传入约定的验证规则，并将 Form-Item 的 prop 属性设置为需校验的字段名即可
 
@@ -319,20 +317,15 @@ this.$refs.trademarkForm.validate(async (valid) => {
 });
 ```
 
-#### 删除品牌
+### 删除品牌
 
 1. 编写删除品牌接口。（API: /admin/product/baseTrademark/remove/{id} method: DELETE)
 2. 删除回调传递作用域插槽中的 row （品牌信息）
 3. messagebox 弹出框确认删除中调用接口。
 
-### 属性管理
+## 属性管理
 
-#### 静态组件搭建
-
-1. Card 卡片作为容器
-2. 卡片里面嵌套三级联动全局组件
-
-#### 三级联动动态数据
+### 三级联动动态数据
 
 1. 编写获取分类相关 API（二级分类根据一级分了id获取，三级分类根据二级分类id获取）
    1. GET /admin/product/getCategory1
@@ -347,7 +340,7 @@ this.$refs.trademarkForm.validate(async (valid) => {
    1. 当一级分类发生变化，清空二三级数据列表与 id
    2. 当二级分类发生变化，清空三级数据列表与 id
 
-#### 获取分类属性
+### 获取分类属性
 
 商品基础属性接口 API: /admin/product/attrInfoList/{category1Id}/{category2Id}/{category3Id}
 Method: GET
@@ -357,11 +350,250 @@ Method: GET
 3. 收集完毕，调用接口请求数据
 4. 数据在 attrManage 组件表格中展示
 
-### SKU管理
+### 添加属性按钮功能
+
+1. 禁用效果：三级分类 id 没有的情况下，禁用状态。
+2. 点击添加按钮 attrManage 表格组件隐藏，添加属性组件显示（使用变量控制）
+
+### 收集组件中的属性
+
+![20221024104532](https://raw.githubusercontent.com/HaloBoys/PicGoMyDevice/main/img/20221024104532.png)
+
+添加属性与属性值接口 API: /admin/product/saveAttrInfo
+Method: POST
+参数描述：（saveAttrInfo）
+```json
+{
+  "attrName": "string", // 属性名
+  // 相关属性值列表
+  "attrValueList": [
+    {
+      "attrId": 0, // 属性名的 id (归属于哪个属性名)
+      "valueName": "string" // 属性值
+    }
+  ],
+  "categoryId": 0, // 分类3 id
+  "categoryLevel": 3,
+}
+```
+
+收集属性逻辑：
+
+1. 收集属性名
+   1. v-model 双向绑定到 data 中
+2. 收集属性值
+   1. 属性值表格数据 data 绑定到 attrValueList，表格根据 attrValueList 数组内容而呈现
+   2. 属性值名称使用作用域插槽回传 attrValueList 中对应元素，插槽中放 el-input 数据双向绑定到回传数据的 valueName 属性
+   3. 添加属性值按钮
+      1. 禁用条件：`:disabled="!attrInfo.attrName.trim().length"`
+      2. 点击事件 attrValueList push 一个新元素 `{ attrId: undefined, valueName: "",}`
+
+### 取消按钮数据回显问题
+
+> 解决添加属性操作中，上次的数据遗留问题
+
+1. 给添加属性按钮绑定事件
+2. 回调函数中初始化data中的数据
+```javascript
+addAttrHandler() {
+  this.isShowAttrInfo = true;
+  this.attrInfo = {
+    attrName: "",
+    attrValueList: [],
+    // 注意此处的三级分类 id 只能在这里获取，不能在 data 中获取，因为对象中的数据是无序排列的
+    categoryId: this.catInfo.catList3id,
+    categoryLevel: 0,
+  };
+},
+```
+
+### 修改属性操作
+
+1. 修改属性按钮添加回调，传入作用域插槽中的 row 对象
+2. 将传过来的对象**深拷贝**，并赋值给 attrInfo
+
+### 查看模式与编辑模式操作
+
+编辑并添加属性值按钮，新添加的属性值 id 应该为对应编辑的属性值 id: 
+
+```javascript
+this.attrInfo.attrValueList.push({
+  // attrId: undefined,
+  attrId: this.attrInfo.id,
+  valueName: "",
+});
+```
+
+#### 编辑模式与查看模式
+
+属性值名称编辑模式与查看模式（input or span）:
+
+1. 定义变量：flag (注意这个变量不能定义在 data 中，而是定义在添加的属性值对象上)
+   1. input 失去焦点（`@blur`）或者回车（`@keyup.native.enter`） 对应属性值对象 flag 改变状态
+   2. span 点击事件，对应属性值对象 flag 改变状态
+2. 使用 v-if 与 v-else 属性值对象身上变量 flag 切换 input or span 显示模式
+
+#### 编辑模式优化
+
+1. 编辑模式下之前的属性没有 flag
+   1. 编辑事件回调中是直接对服务器的数据进行了深拷贝，而服务器数据中没有我们自定义的 flag 属性
+   2. 深拷贝之后，对拷贝过来的对象进行遍历，使用 `$set` 方法对对象添加响应式数据。
+2. 由编辑模式切换查看模式 input 输入框内容判断
+   1. 不能为空
+      1. input 失去焦点（`@blur`）回调函数中对 row 的值进行判断
+      2. 如果为空，就直接 return 一个弹出框提示用户
+   2. 不能有重复的属性值
+      1. input 失去焦点（`@blur`）回调函数中对整个数组使用 some 方法进行判断（排除自身进行判断）
+      2. 如果结果为 false 则说明有重复的元素，return 一个弹出框提示用户
+```javascript
+// 属性值表单失去焦点事件
+attrInfoBlurHandler(row) {
+  // 属性值不能为空判断
+  if (!row.valueName.trim()) {
+    return this.$message("属性值不能为空！");
+  }
+  // 不能有重复的属性值判断
+  let isRepeat = this.attrInfo.attrValueList.some((item) => {
+    // 排除自身进行判断
+    if (row != item) {
+      return item.valueName == row.valueName;
+    }
+  });
+  if (isRepeat) {
+    this.attrInfo.attrValueList.pop();
+    return this.$message.error("属性值不能重复！");
+  }
+  row.flag = false;
+},
+```
+
+#### 表单元素自动聚焦
+
+由查看模式切换为编辑模式自动聚焦：
+
+1. 给 input 元素打一个 ref 属性，属性值是 $index
+2. 点击 span 标签回调函数中传入$index索引，用于获取 input 标签
+3. 在 nextTick 函数中获取 input 并调用 focus 方法
+
+点击添加属性值按钮自动聚焦：
+
+1. 在添加属性值按钮回调函数中使用 nextTick 方法获取当前属性列表数组中最后一个 input 元素。
+2. 为最后一个 input 元素调用 focus 方法
+
+### 删除属性名称
+
+1. 删除点击弹出 Popconfirm 气泡确认框组件
+```html
+<el-table-column prop="prop" label="操作" width="width">
+  <template slot-scope="{ row, $index }">
+    <el-popconfirm
+      :title="`确定删除${row.valueName}?`"
+      @onConfirm="attrInfoDeleteHandler($index)"
+    >
+      <el-button
+        type="danger"
+        icon="el-icon-delete"
+        size="mini"
+        slot="reference"
+      ></el-button>
+    </el-popconfirm>
+  </template>
+</el-table-column>
+```
+2. 回调函数中根据索引删除数组对应元素
+```javascript
+attrInfoDeleteHandler(index) {
+  this.attrInfo.attrValueList.splice(index, 1);
+},
+```
+
+### 添加属性与修改属性保存操作
+
+#### 保存数据API
+
+```javascript
+
+/* 
+  API: /admin/product/saveAttrInfo
+  Method: POST
+  参数格式:
+  {
+    "attrName": "string",
+    "attrValueList": [
+      {
+        "attrId": 0,
+        "valueName": "string"
+      }
+    ],
+    "categoryId": 0,
+    "categoryLevel": 0,
+  }
+*/
+
+export const reqaddOrUpdateAttrSave = (data) => request({
+  url: `/admin/product/saveAttrInfo`,
+  method: "post",
+  data
+})
+```
+
+#### 保存操作逻辑
+
+保存按钮中对数据进行整理
+
+1. 如果属性值为空，则不需要提交给服务器
+2. 不需要传递 flag 属性
+
+```javascript
+// 保存按钮
+async addOrUpdateAttrSave() {
+  /* 
+  整理参数
+    1. 如果属性值为空，则不需要提交给服务器
+    2. 不需要传递 flag 属性
+  */
+  this.attrInfo.attrValueList = this.attrInfo.attrValueList.filter(
+    (item) => {
+      if (!item.valueName == "") {
+        delete item.flag;
+        return true;
+      }
+    }
+  );
+  // 发请求
+  try {
+    let res = await this.$API.attrmanage.reqaddOrUpdateAttrSave(
+      this.attrInfo
+    );
+    if (res.code == 200) {
+      this.getAttrInfoList();
+      this.$message.success("保存成功!");
+      this.isShowAttrInfo = true;
+    }
+  } catch (error) {
+    this.$message.error("保存失败!");
+  }
+},
+```
+
+### 最后优化
+
+#### 三级联动禁用状态
+
+当点击添加属性,展示属性表格隐藏的时候,三级联动禁用
+
+1. 通过 `props` 将 `isShowAttrInfo` (控制属性表格显示与隐藏) 的变量取反传递给三级联动组件
+2. 三级联动组件 el-select 的禁用状态通过这个变量来控制
+
+#### 保存按钮禁用状态
+
+如果属性值列表为空,则保存按钮为禁用状态 `:disabled="attrInfo.attrValueList.length < 1"`
+
+## SKU 管理
 
 
 
-### SPU管理
+## SPU 管理
 
 
 

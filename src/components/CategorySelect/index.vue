@@ -6,6 +6,7 @@
           v-model="catInfo.catList1id"
           placeholder="请选择"
           @change="catList1Handler"
+          :disabled="iscontrol"
         >
           <el-option
             :label="item.name"
@@ -20,6 +21,7 @@
           v-model="catInfo.catList2id"
           placeholder="请选择"
           @change="catList2Handler"
+          :disabled="iscontrol"
         >
           <el-option
             :label="item.name"
@@ -34,6 +36,7 @@
           v-model="catInfo.catList3id"
           placeholder="请选择"
           @change="catList3Handler"
+          :disabled="iscontrol"
         >
           <el-option
             :label="item.name"
@@ -69,6 +72,7 @@ export default {
       },
     };
   },
+  props: ["iscontrol"],
   mounted() {
     this.getCategory1();
   },
