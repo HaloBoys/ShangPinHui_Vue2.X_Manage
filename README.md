@@ -1038,3 +1038,33 @@ loading 效果：
 
 ## SKU 管理
 
+### 静态组件
+
+1. el-table 展示数据，相关字段：
+   1. 序号
+   2. 名称
+   3. 描述
+   4. 默认图片
+   5. 重量（KG)
+   6. 价格（元）
+   7. 操作
+      1. 上架 （根据 row.isSale 属性展示）
+      2. 下架 （根据 row.isSale 属性展示）
+      3. 编辑
+         1. 正在开发中..
+      4. 信息
+      5. 删除
+2. 分页
+
+### 渲染数据
+
+1. 接口：GET /admin/product/list/{page}/{limit}
+2. 初始化页码参数并绑定到 pagination
+3. 根据参数调用接口发送请求
+4. el-table 操作区域按钮
+   1. 上下架操作
+      1. 接口：
+         1. GET /admin/product/onSale/{skuId}
+         2. GET /admin/product/cancelSale/{skuId}
+   2. 信息按钮
+      1. Drawer 抽屉进行展示
