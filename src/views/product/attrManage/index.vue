@@ -35,16 +35,23 @@
           <el-table-column prop="prop" label="操作" width="150">
             <template slot-scope="{ row }">
               <el-button
+                style="margin-right: 15px"
                 type="warning"
                 size="mini"
                 icon="el-icon-edit"
                 @click="editAttrInfo(row)"
               ></el-button>
-              <el-button
-                type="danger"
-                size="mini"
-                icon="el-icon-delete"
-              ></el-button>
+              <el-popconfirm
+                :title="`确定删除${row.attrName}?`"
+                @onConfirm="deleteAttrInfo(row)"
+              >
+                <el-button
+                  type="danger"
+                  size="mini"
+                  icon="el-icon-delete"
+                  slot="reference"
+                ></el-button>
+              </el-popconfirm>
             </template>
           </el-table-column>
         </el-table>
@@ -275,6 +282,16 @@ export default {
         }
       } catch (error) {
         this.$message.error("保存失败!");
+      }
+    },
+    // 删除属性
+    async deleteAttrInfo(row) {
+      let res = await this.$API.attrmanage.reqDeleteAttr(row.id);
+      if (res.code == 200) {
+        this.$message.success("删除成功!");
+        this.getAttrInfoList();
+      } else {
+        this.$message.error("删除失败!");
       }
     },
   },

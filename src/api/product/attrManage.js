@@ -58,3 +58,13 @@ export const reqaddOrUpdateAttrSave = (data) => request({
   method: "post",
   data
 })
+
+/* 
+  API: /admin/product/deleteAttr/{attrId}
+  Method: DELETE
+*/
+
+export const reqDeleteAttr = (attrId) => request({
+  url: `/admin/product/deleteAttr/${attrId}`,
+  method: "DELETE"
+})

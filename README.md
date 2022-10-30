@@ -56,26 +56,55 @@ devServer.proxy：https://www.webpackjs.com/configuration/dev-server/#devserver-
 
 ## 三级联动
 
+![20221025104220](https://raw.githubusercontent.com/HaloBoys/PicGoMyDevice/main/img/20221025104220.png)
+
 ```html
 <template>
   <div>
-    <el-form :inline="true" :model="formInline" class="demo-form-inline">
+    <el-form :inline="true" :model="catInfo" class="demo-form-inline">
       <el-form-item label="一级分类">
-        <el-select v-model="formInline.region" placeholder="请选择">
-          <el-option label="区域一" value="shanghai"></el-option>
-          <el-option label="区域二" value="beijing"></el-option>
+        <el-select
+          v-model="catInfo.catList1id"
+          placeholder="请选择"
+          @change="catList1Handler"
+          :disabled="iscontrol"
+        >
+          <el-option
+            :label="item.name"
+            :value="item.id"
+            v-for="item in catList1"
+            :key="item.id"
+          ></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="二级分类">
-        <el-select v-model="formInline.region" placeholder="请选择">
-          <el-option label="区域一" value="shanghai"></el-option>
-          <el-option label="区域二" value="beijing"></el-option>
+        <el-select
+          v-model="catInfo.catList2id"
+          placeholder="请选择"
+          @change="catList2Handler"
+          :disabled="iscontrol"
+        >
+          <el-option
+            :label="item.name"
+            :value="item.id"
+            v-for="item in catList2"
+            :key="item.id"
+          ></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="三级分类">
-        <el-select v-model="formInline.region" placeholder="请选择">
-          <el-option label="区域一" value="shanghai"></el-option>
-          <el-option label="区域二" value="beijing"></el-option>
+        <el-select
+          v-model="catInfo.catList3id"
+          placeholder="请选择"
+          @change="catList3Handler"
+          :disabled="iscontrol"
+        >
+          <el-option
+            :label="item.name"
+            :value="item.id"
+            v-for="item in catList3"
+            :key="item.id"
+          ></el-option>
         </el-select>
       </el-form-item>
     </el-form>
@@ -91,8 +120,59 @@ export default {
       formInline: {
         region: "",
       },
+      // 服务器获取的1~3级分类列表
+      catList1: [],
+      catList2: [],
+      catList3: [],
+      // el-form 数据绑定源
+      catInfo: {
+        // 选中的 id
+        catList1id: "",
+        catList2id: "",
+        catList3id: "",
+      },
     };
-  }
+  },
+  props: ["iscontrol"],
+  mounted() {
+    this.getCategory1();
+  },
+  methods: {
+    async getCategory1() {
+      let res = await this.$API.attrmanage.reqGetCategory1();
+      if (res.code == 200) {
+        this.catList1 = res.data;
+      }
+    },
+    async catList1Handler() {
+      let { catList1id } = this.catInfo;
+      this.$emit("getCategoryId", { catListid: catList1id, level: 1 });
+      // 二次选择清空逻辑
+      this.catList2 = [];
+      this.catList3 = [];
+      this.catInfo.catList2id = "";
+      this.catInfo.catList3id = "";
+      let res = await this.$API.attrmanage.reqGetCategory2(catList1id);
+      if (res.code == 200) {
+        this.catList2 = res.data;
+      }
+    },
+    async catList2Handler() {
+      let { catList2id } = this.catInfo;
+      this.$emit("getCategoryId", { catListid: catList2id, level: 2 });
+      // 二次选择清空逻辑
+      this.catList3 = [];
+      this.catInfo.catList3id = "";
+      let res = await this.$API.attrmanage.reqGetCategory3(catList2id);
+      if (res.code == 200) {
+        this.catList3 = res.data;
+      }
+    },
+    catList3Handler() {
+      let { catList3id } = this.catInfo;
+      this.$emit("getCategoryId", { catListid: catList3id, level: 3 });
+    },
+  },
 };
 </script>
 ```
@@ -187,6 +267,8 @@ export const reqTradeMarkList = (page,limit) => request({
 
 添加/修改品牌对话框(复用)
 
+> `:title="tradeInfo.id ? '修改品牌' : '添加品牌'"`
+
 1. 添加/修改点击事件，控制 dialog 显示 `dialogFormVisible`
 2. dialog 中：
    1. input
@@ -261,7 +343,7 @@ async addOrUpdateConfirm() {
 ### 修改品牌
 
 1. 作用域插槽中的 row 就是对应品牌的信息，传递给修改对应的回调
-2. 在回调中将对应的值同步到 data 进行展示（注意此处浅拷贝，防止表格数据直接被修改）
+2. 在回调中将对应的值同步到 data 进行展示（注意此处`浅拷贝`，防止表格数据直接被修改）
 3. 点击确定刷新列表时，保持之前的页码
 4. dialog title 根据 tradeInfo 中是否包含 id 动态展示 `:title="tradeInfo.id ? '修改品牌' : '添加品牌'"`
 
@@ -327,7 +409,7 @@ this.$refs.trademarkForm.validate(async (valid) => {
 
 ### 三级联动动态数据
 
-1. 编写获取分类相关 API（二级分类根据一级分了id获取，三级分类根据二级分类id获取）
+1. 编写获取分类相关 API（二级分类根据一级分类id获取，三级分类根据二级分类id获取）
    1. GET /admin/product/getCategory1
    2. GET /admin/product/getCategory2/{category1Id}
    3. GET /admin/product/getCategory3/{category2Id}
@@ -336,7 +418,7 @@ this.$refs.trademarkForm.validate(async (valid) => {
 4. 一级分类 el-option 绑定 change 事件，事件回调中根据 id 获取二级分类列表并渲染
 5. 二级分类 el-option 绑定 change 事件，事件回调中根据 id 获取三级分类列表并渲染
 6. 三级分类 el-option 绑定 change 事件
-7. 一二级分类二次选择清空逻辑
+7. 一二级分类`二次选择清空逻辑`
    1. 当一级分类发生变化，清空二三级数据列表与 id
    2. 当二级分类发生变化，清空三级数据列表与 id
 
@@ -345,8 +427,8 @@ this.$refs.trademarkForm.validate(async (valid) => {
 商品基础属性接口 API: /admin/product/attrInfoList/{category1Id}/{category2Id}/{category3Id}
 Method: GET
 
-1. 分类 change 事件回调中将分类 id 通过自定义事件发送给父组件，并加上标识用于区分一二三级分类
-2. attrManage 组件在自定义事件回调中接收到传过来的 id，并保存，
+1. 分类 change 事件回调中将分类 id 通过`自定义事件`发送给父组件，并`加上标识`用于区分一二三级分类
+2. attrManage 父组件在自定义事件回调中接收到传过来的 id，并保存，
 3. 收集完毕，调用接口请求数据
 4. 数据在 attrManage 组件表格中展示
 
@@ -410,11 +492,11 @@ addAttrHandler() {
 ### 修改属性操作
 
 1. 修改属性按钮添加回调，传入作用域插槽中的 row 对象
-2. 将传过来的对象**深拷贝**，并赋值给 attrInfo
+2. 将传过来的对象**深拷贝**，并赋值给 attrInfo (注意此处不能直接赋值,否则他们用的都是同一个地址)
 
 ### 查看模式与编辑模式操作
 
-编辑并添加属性值按钮，新添加的属性值 id 应该为对应编辑的属性值 id: 
+编辑并添加属性值操作: 新添加的属性值 id 应该为`对应编辑的属性值 id`: 
 
 ```javascript
 this.attrInfo.attrValueList.push({
@@ -426,7 +508,7 @@ this.attrInfo.attrValueList.push({
 
 #### 编辑模式与查看模式
 
-属性值名称编辑模式与查看模式（input or span）:
+属性值名称编辑模式与查看模式（input or span 切换）:
 
 1. 定义变量：flag (注意这个变量不能定义在 data 中，而是定义在添加的属性值对象上)
    1. input 失去焦点（`@blur`）或者回车（`@keyup.native.enter`） 对应属性值对象 flag 改变状态
@@ -443,10 +525,11 @@ this.attrInfo.attrValueList.push({
       1. input 失去焦点（`@blur`）回调函数中对 row 的值进行判断
       2. 如果为空，就直接 return 一个弹出框提示用户
    2. 不能有重复的属性值
-      1. input 失去焦点（`@blur`）回调函数中对整个数组使用 some 方法进行判断（排除自身进行判断）
+      1. input 失去焦点（`@blur`）回调函数中对整个数组使用 some 方法进行判断（`排除自身`进行判断, 用自身的这个元素和数组中每一个元素比较）
       2. 如果结果为 false 则说明有重复的元素，return 一个弹出框提示用户
+
 ```javascript
-// 属性值表单失去焦点事件
+// 属性值表单失去焦点事件 (写的太优雅!)
 attrInfoBlurHandler(row) {
   // 属性值不能为空判断
   if (!row.valueName.trim()) {
@@ -456,10 +539,12 @@ attrInfoBlurHandler(row) {
   let isRepeat = this.attrInfo.attrValueList.some((item) => {
     // 排除自身进行判断
     if (row != item) {
+      // 返回的是一个布尔值
       return item.valueName == row.valueName;
     }
   });
   if (isRepeat) {
+    // 删除这个重复的元素
     this.attrInfo.attrValueList.pop();
     return this.$message.error("属性值不能重复！");
   }
@@ -473,14 +558,32 @@ attrInfoBlurHandler(row) {
 
 1. 给 input 元素打一个 ref 属性，属性值是 $index
 2. 点击 span 标签回调函数中传入$index索引，用于获取 input 标签
-3. 在 nextTick 函数中获取 input 并调用 focus 方法
+3. 在 `nextTick 函数`中获取 input 并调用 focus 方法
 
 点击添加属性值按钮自动聚焦：
 
-1. 在添加属性值按钮回调函数中使用 nextTick 方法获取当前属性列表数组中最后一个 input 元素。
+1. 在添加属性值按钮回调函数中使用 nextTick 方法获取当前属性列表`数组中最后一个 input 元素`。
 2. 为最后一个 input 元素调用 focus 方法
 
 ### 删除属性名称
+
+API: 
+
+```javascript
+/* 
+  API: /admin/product/deleteAttr/{attrId}
+  Method: DELETE
+*/
+
+export const reqDeleteAttr = (attrId) => request({
+  url: `/admin/product/deleteAttr/${attrId}`,
+  method: "DELETE"
+})
+```
+
+删除属性名称按钮绑定事件,并传入要删除的 attrId 调用接口
+
+### 删除属性值名称
 
 1. 删除点击弹出 Popconfirm 气泡确认框组件
 ```html
@@ -539,7 +642,7 @@ export const reqaddOrUpdateAttrSave = (data) => request({
 
 #### 保存操作逻辑
 
-保存按钮中对数据进行整理
+保存按钮中对数据进行`整理`
 
 1. 如果属性值为空，则不需要提交给服务器
 2. 不需要传递 flag 属性
@@ -582,18 +685,356 @@ async addOrUpdateAttrSave() {
 
 当点击添加属性,展示属性表格隐藏的时候,三级联动禁用
 
-1. 通过 `props` 将 `isShowAttrInfo` (控制属性表格显示与隐藏) 的变量取反传递给三级联动组件
-2. 三级联动组件 el-select 的禁用状态通过这个变量来控制
+1. 通过 `props` 将 `isShowAttrInfo` (控制属性表格显示与隐藏) 的变量`取反`传递给三级联动组件
+2. 三级联动组件 el-select 的禁用状态`通过这个变量来控制`
 
 #### 保存按钮禁用状态
 
 如果属性值列表为空,则保存按钮为禁用状态 `:disabled="attrInfo.attrValueList.length < 1"`
 
-## SKU 管理
-
-
-
 ## SPU 管理
 
+### 静态组件
 
+![20221026223510](https://raw.githubusercontent.com/HaloBoys/PicGoMyDevice/main/img/20221026223510.png)
+
+顶部：三级联动
+
+底部：底部会有三部分进行切换: 通过定义数字 scene: `0 1 2` 来判断加载哪个场景
+
+1. SPU 列表结构【场景0】
+   1. 索引
+   2. SPU 名称
+   3. SPU 描述
+   4. 操作(按钮)
+      1. 添加
+      2. 编辑
+      3. 信息
+      4. 删除
+   5. 分页
+2. 添加 / 修改 SPU (拆分成一个组件)【场景1】
+   1. SPU名称
+   2. 品牌
+   3. SPU描述
+   4. SPU图片（照片墙）
+   5. 销售属性
+   6. 保存/取消按钮
+3. 添加 SKU (拆分成一个组件)【场景2】
+   1. SPU名称
+   2. SKU名称
+   3. 价格（元）
+   4. 重量（千克）
+   5. 规格描述
+   6. 平台属性
+   7. 销售属性
+   8. 图片列表
+   9.  保存/取消按钮
+
+### SPU 列表结构
+
+#### API
+
+```javascript
+/* 
+  API: /admin/product/{page}/{limit}
+  Method: GET
+*/
+export const reqGetSpuList = (page, limit, category3Id) => request({
+  url: `/admin/product/${page}/${limit}`,
+  method: "get",
+  params: {
+    category3Id
+  }
+})
+```
+
+#### 展示逻辑
+
+1. 三级分类选择完成调用接口，获取数据，渲染数据
+2. SPU 列表操作按钮有鼠标 hover 提示效果.（两种方案）
+   1. 使用 el-tooltip 组件包裹按钮
+   2. 封装自定义按钮组件。`HintButton`
+3. 分页器数据绑定事件绑定
+
+#### 信息 info
+
+接口：GET /admin/product/findBySpuId/{spuId}
+
+点击 info 按钮会通过 dialog 对话框展示当前 spu 的 所有 sku
+
+1. dialog 嵌套表格
+2. title 动态
+3. 根据 spu id 信息发请求获取 sku 列表数据
+4. 保存数据，渲染数据
+
+loading 效果：
+
+> Loading 加载 https://element.eleme.cn/#/zh-CN/component/loading
+
+
+
+#### 删除 SPU
+
+删除场景 0 中的数据
+
+1. 点击删除按钮传递 Row，（根据row中的spuid删除数据）
+2. 在回调中发送请求删除数据
+3. 删除成功后重新获取列表数据
+
+### 添加 / 修改 SPU 组件数据请求与绑定【难点】
+
+#### 修改 SPU 组件数据获取与展示逻辑
+
+数据获取：
+
+1. 点击修改按钮 spuEdit 子组件需要发送四个请求：
+   1. 品牌信息 数据：GET /admin/product/baseTrademark/getTrademarkList
+   2. 获取平台所有销售属性：GET /admin/product/baseSaleAttrList
+   3. 根据 id 获取spu数据：GET /admin/product/getSpuById/{spuId}
+   4. 根据 id 获取spu图片：GET /admin/product/spuImageList/{spuId}
+2. 取消按钮点击事件：展示 `scene：0` SPU 列表结构场景
+   1. 通过自定义事件将数字 0 传递给父组件，父组件同步到 data
+3. spuEdit 子组件什么时候发请求？（不可以在mounted生命周期中发，因为只会执行一次。）
+   1. 在编辑按钮事件中发请求。（每次点击都会发请求）
+   2. 给 spuEdit 子组件打一个 ref
+   3. 在编辑按钮事件回调中获取子组件，调用组件身上初始化数据的接口函数（注意此处用了 v-if 展示子组件，所以需要使用 nextTick 函数获取，否则获取不到）
+
+数据展示：
+
+> 此处不仅要考虑`如何展示数据`，还要考虑`如何收集数据`
+
+整个表单数据绑定到 spuInfo 对象上：`:model="spuInfo"`
+
+1. SPU名称
+   1. v-model
+2. 品牌
+   1. `el-select` 收集到的数据双向绑定到 `spuInfo.tmId` 中
+   2. 循环渲染数据源为 tradeMarkList，收集的数据为 item.id
+3. SPU描述
+   1. 双向数据绑定到 `spuInfo.description` 字段
+4. SPU图片（照片墙）
+   1. 数据展示
+      1. 需要使用 `:file-list="spuImages"` 字段指定要展示的数据源，
+         1. fileList 是一个数组对象
+         2. 对象中包含两个属性：name url
+      2. 而服务器返回的数据中没有这两个属性，所以在保存服务器返回的数据之前，需要对数据进行处理，加上 name url 字段
+   2. 图片数据收集
+      1. 照片墙删除事件：`:on-remove="handleRemove"` 会注入两个参数：file(被删除的元素)、fileList(删除后剩余的元素) 将 fileList(删除后剩余的元素) 保存在 data 中
+      2. 照片墙上传图片：`:on-success="handleSpuImgSuccess"` 会注入三个参数：response、file、filelist 其中 filelist 是上传成功后所有的图片数据，将其保存在 data 中
+      3. 数据整理
+5. 销售属性【难点】
+   1. 销售属性 select 选择【展示】
+      1. 使用计算属性: 计算出还没有被选中的销售属性(平台一共有三个属性)使用计算出来的数据进行渲染，数据绑定在变量：spuSaleAttr
+      ```html
+      <el-select v-model="spuSaleAttr" :placeholder="`还有${getNoSelectSaleAttr.length}个属性`">
+      <el-option
+        v-for="item in getNoSelectSaleAttr"
+        :key="item.id"
+        :label="item.name"
+        :value="item.id"
+      >
+      </el-option>
+      </el-select>
+      ```
+      ```javascript
+      computed: {
+      getNoSelectSaleAttr() {
+        let res = this.baseSaleAttrList.filter((item1) => {
+          return this.spuInfo.spuSaleAttrList.every((item2) => {
+            return item2.saleAttrName != item1.name;
+          });
+        });
+        return res;
+      },
+      },
+      ```
+      2. 添加销售属性按钮禁用事件：`:disabled="!spuSaleAttr"` (spuSaleAttr 是 el-select 双向绑定的变量，el-select 没有选中属性，按钮就是禁用状态)
+   2. table 组件【展示】: 已有销售属性(数据源绑定到 spuInfo.spuSaleAttrList)
+      1. 属性名
+      2. 属性名称列表
+         1. 使用 Tag 动态编辑标签组件展示
+         2. Tag 标签中的 input 和 按钮之间的切换
+      3. 操作
+   3. 销售属性操作
+      1. 添加销售属性名
+         1. 收集 el-select 双向绑定的数据：`:value="`${item.id}:${item.name}`"`
+         2. 添加销售属性按钮点击事件：
+            1. 对以上收集到的数据进行处理（split(":")）
+            2. 处理完成后将数据添加到 `属性名 el-table` 的数据源上: `spuInfo.spuSaleAttrList`(pushh)
+         3. 相关字段
+            1. baseSaleAttrId
+            2. saleAttrName
+            3. spuSaleAttrValueList
+      2. 展示 / 收集销售属性值
+         1. `+ New Tag` 按钮点击事件：
+            1. 给每一个 row 添加一个 `inputVisible` 属性，用于控制 input 和 span 状态的切换（注意此处要用 $set 方法为 row 添加响应式数据）
+            2. 收集用户输入 input 中的数据（注意此处要用 $set 方法为 `row` 添加响应式数据）数据双向绑定到这个响应式数据
+         2. input 失去焦点：
+            1. inputVisible 属性为 false（由输入框变为 span）
+            2. 将 input 中的数据整合并添加到  el-tag 绑定的数据源，字段格式：
+               1. baseSaleAttrId
+               2. saleAttrValueName
+         3. input 失去焦点数据校验：
+            1. 属性值不能为空
+            2. 属性值不能重复
+   4. 删除操作
+      1. 删除 Tag
+         1. 使用 splice 方法根据索引删除 `row.spuSaleAttrValueList` 数组中的数据
+      2. 删除整个 Row
+         1. 使用 splice 方法根据索引删除 spuSaleAttrList 数组中的数据
+6. 三级联动操作性
+   1. 除了场景 0 以外都不可以操作三级联动
+7. 保存操作
+   1. 修改和添加 SPU 封装成同一个请求（除了添加 SPU 接口参数`不携带 id` 外，其他参数都和修改接口一样）
+      1. POST /admin/product/updateSpuInfo
+      2. POST /admin/product/saveSpuInfo
+   2. 整理参数【难点】
+      1. 对照片墙收集到的数据进行整理
+         1. 必须有 `imgName` 和 `imgUrl` 字段，新上传的图片没有这两个字段（但是有 name 和 url 字段），所以需要对新上传的数据进行处理。
+         2. 使用数组 map 方法对原数组进行处理，返回处理后的数组，覆盖原数组
+   3. 发请求
+   4. 弹出 message 并回到场景 0，然后父组件中刷新场景 0 中的数据
+
+#### 添加 SPU 数据逻辑
+
+因为添加 SPU 中 spuInfo 对象没有被初始化是空对象。不利于后期收集数据，所以在 data 中直接将 spuInfo 对象根据接口参数初始化。
+```json
+{
+  "category3Id": 0,
+  "description": "string",
+  "spuImageList": [
+    {
+      "id": 0,
+      "imgName": "string",
+      "imgUrl": "string",
+      "spuId": 0
+    }
+  ],
+  "spuName": "string",
+  "spuSaleAttrList": [
+    {
+      "baseSaleAttrId": 0,
+      "id": 0,
+      "saleAttrName": "string",
+      "spuId": 0,
+      "spuSaleAttrValueList": [
+        {
+          "baseSaleAttrId": 0,
+          "id": 0,
+          "isChecked": "string",
+          "saleAttrName": "string",
+          "saleAttrValueName": "string",
+          "spuId": 0
+        }
+      ]
+    }
+  ],
+  "tmId": ""
+}
+```
+
+添加 SPU 数据
+
+1. 点击添加按钮 spuEdit 子组件需要发送两个请求初始化组件 select：
+   1. 品牌信息 数据：GET /admin/product/baseTrademark/getTrademarkList
+   2. 获取平台所有销售属性：GET /admin/product/baseSaleAttrList
+2. 三级分类 id 传递给子组件，初始化 data 中的数据
+3. 添加完成后跳转到场景 0 的 第一页
+
+### 添加 SKU
+
+1. 传递参数 `row` 和 `categoryId` 并切换为场景 2
+2. 父组件通知子组件（ref获取子节点调用方法）发送请求初始化组件数据
+   1. 根据 Id 获取图片数据 GET /admin/product/spuImageList/{spuId}
+   2. 根据 Id 获取销售属性 GET /admin/product/spuSaleAttrList/{spuId}
+   3. 根据 Id 获取平台属性 GET /admin/product/attrInfoList/{category1Id}/{category2Id}/{category3Id}
+3. 将接口请求的数据分别保存在 data 中
+4. 数据展示与收集
+   1. SPU名称
+   2. SKU名称
+   3. 价格（元）
+      1. type = "number"
+   4. 重量（千克）
+   5. 规格描述
+   6. 平台属性 【难点】
+      1. 有两个 select 数据是动态的（使用循环渲染出来）
+      2. 使用模板字符串`收集到平台属性对象身上`
+   7. 销售属性
+      1. 使用循环渲染
+      2. 使用模板字符串`收集到平台属性对象身上`
+   8. 图片列表（数据展示与收集）
+      1. 绑定数据源，使用 table 渲染
+      2. selection 的事件获取被勾选的 row（数组）存储在 data 中需要收集发给服务器的参数：
+         1. imgName 
+         2. imgurl
+         3. spuImgId
+         4. isDefault（控制是不是默认图片）
+      3. 图片使用作用域插槽读取展示
+      4. 两个按钮（设为默认、默认）
+         1. 数据默认没有 isDefault 字段，所以在服务器返回数据存储之前，对数据进行处理，添加 isDefault 字段：默认值为 0
+         2. 按钮根据 isDefault 字段的值进行 v-if 展示
+         3. 按钮点击事件，使用排他操作（只能有一张图片设置为默认图）
+         4. 收集默认图片地址
+   9.  保存/取消按钮
+       1. 保存：发请求
+       2. 取消: 切换场景【清除数据】
+5. 保存 SKU
+   1. 接口：POST /admin/product/saveSkuInfo
+   2. 参数格式：
+  ```json
+  {
+    "category3Id": 0,
+    "createTime": "2022-10-22T13:40:27.515Z",
+    "id": 0,
+    "isSale": 0,
+    "price": 0,
+    "skuAttrValueList": [
+      {
+        "attrId": 0,
+        "attrName": "string",
+        "id": 0,
+        "skuId": 0,
+        "valueId": 0,
+        "valueName": "string"
+      }
+    ],
+    "skuDefaultImg": "string",
+    "skuDesc": "string",
+    "skuImageList": [
+      {
+        "id": 0,
+        "imgName": "string",
+        "imgUrl": "string",
+        "isDefault": "string",
+        "skuId": 0,
+        "spuImgId": 0
+      }
+    ],
+    "skuName": "string",
+    "skuSaleAttrValueList": [
+      {
+        "id": 0,
+        "saleAttrId": 0,
+        "saleAttrName": "string",
+        "saleAttrValueId": 0,
+        "saleAttrValueName": "string",
+        "skuId": 0,
+        "spuId": 0
+      }
+    ],
+    "spuId": 0,
+    "tmId": 0,
+    "weight": "string"
+  }
+  ```
+   3. 整理参数【难点】
+      1. 平台属性数据整理
+         1. forEach
+         2. reduce
+      2. 销售属性数据整理
+         1. forEach
+         2. reduce
+      3. 图片数据整理
+
+## SKU 管理
 

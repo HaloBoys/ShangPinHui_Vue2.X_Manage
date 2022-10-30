@@ -81,20 +81,20 @@ export const constantRoutes = [{
         title: '属性管理',
       }
     }, {
-      path: 'skumanage',
-      name: 'SkuManage',
-      component: () => import('@/views/product/skuManage'),
-      meta: {
-        title: 'SKU管理',
-      }
-    }, {
       path: 'spumanage',
       name: 'SpuManage',
       component: () => import('@/views/product/spuManage'),
       meta: {
         title: 'SPU管理',
       }
-    }, ]
+    }, {
+      path: 'skumanage',
+      name: 'SkuManage',
+      component: () => import('@/views/product/skuManage'),
+      meta: {
+        title: 'SKU管理',
+      }
+    }]
   },
   // 404 page must be placed at the end !!!
   {

@@ -2,8 +2,10 @@
 
 import * as trademark from "@/api/product/tradeMark"
 import * as attrmanage from "@/api/product/attrManage"
+import * as spumanage from "@/api/product/spuManage"
 
 export default {
   trademark,
-  attrmanage
+  attrmanage,
+  spumanage
 }
