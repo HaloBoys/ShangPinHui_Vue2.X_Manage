@@ -31,7 +31,9 @@ export default {
       'sidebar'
     ]),
     routes() {
-      return this.$router.options.routes
+      // return this.$router.options.routes
+      // 加入了权限管理，需要遍历的应该是仓库计算完毕的全部路由
+      return this.$store.state.user.resAllRoutes
     },
     activeMenu() {
       const route = this.$route

@@ -30,6 +30,9 @@ import Layout from '@/layout'
  * a base page that does not have permission requirements
  * all roles can be accessed
  */
+
+//  项目中的路由进行拆分：
+// 1. 常量路由：就是不关用户是什么角色，都可以看见的路由
 export const constantRoutes = [{
     path: '/login',
     component: () => import('@/views/login/index'),
@@ -55,6 +58,62 @@ export const constantRoutes = [{
         icon: 'dashboard'
       }
     }]
+  },
+  // 404 page must be placed at the end !!!
+  {
+    path: '*',
+    redirect: '/404',
+    hidden: true
+  }
+]
+
+// 2. 异步路由：不同的用户（角色），需要过滤筛选出的路由，称之为异步路由
+export const asyncRoutes = [
+  // 权限管理及子路由
+  {
+    name: 'Acl',
+    path: '/acl',
+    component: Layout,
+    redirect: '/acl/user/list',
+    meta: {
+      title: '权限管理',
+      icon: 'el-icon-lock'
+    },
+    children: [{
+        name: 'User',
+        path: 'user/list',
+        component: () => import('@/views/acl/user/list'),
+        meta: {
+          title: '用户管理',
+        },
+      },
+      {
+        name: 'Role',
+        path: 'role/list',
+        component: () => import('@/views/acl/role/list'),
+        meta: {
+          title: '角色管理',
+        },
+      },
+      {
+        name: 'RoleAuth',
+        path: 'role/auth/:id',
+        component: () => import('@/views/acl/role/roleAuth'),
+        meta: {
+          activeMenu: '/acl/role/list',
+          title: '角色授权',
+        },
+        hidden: true,
+      },
+      {
+        name: 'Permission',
+        path: 'permission/list',
+        component: () => import('@/views/acl/permission/list'),
+        meta: {
+          title: '菜单管理',
+        },
+      },
+    ]
   },
   // 商品管理及其子路由
   {
@@ -96,13 +155,14 @@ export const constantRoutes = [{
       }
     }]
   },
-  // 404 page must be placed at the end !!!
-  {
-    path: '*',
-    redirect: '/404',
-    hidden: true
-  }
 ]
+
+// 3. 任意路由：当路径出现错误的时候重定向 404
+export const anyRoutes = {
+  path: '*',
+  redirect: '/404',
+  hidden: true
+}
 
 const createRouter = () => new Router({
   // mode: 'history', // require service support

@@ -44,6 +44,8 @@ devServer.proxy：https://www.webpackjs.com/configuration/dev-server/#devserver-
 
 ### 表单自定义校验规则
 
+## Echarts
+
 
 
 # 项目路由搭建
@@ -1068,3 +1070,331 @@ loading 效果：
          2. GET /admin/product/cancelSale/{skuId}
    2. 信息按钮
       1. Drawer 抽屉进行展示
+
+## 权限管理
+
+> 值得参考的权限管理文章：https://juejin.cn/post/6949453195987025927#heading-8
+
+通过给项目引入了权限控制方案,可以满足我们灵活的调整用户访问相关页面的许可。
+比如哪些页面向游客开放,哪些页面必须要登录后才能访问,哪些页面只能被某些角色访问(比如超级管理员).有些页面即使用户登录了但受到角色的限制,他也只被允许看到页面的部分内容。
+
+### 路由权限管理
+
+不同的用户（角色）,`登录`的时候会向服务器发请求，`服务器会把用户相应的菜单的权限的信息，返回给我们我们可以根据服务器返回的数据（信息）`,可以动态的设置路由，可以根据不同的用户展示不同的菜单。
+
+1. 当用户登录的时候，服务器端会返回相应角色的菜单权限的信息【数组】
+2. 把项目中的`路由进行拆分`
+   1. 常量路由：就是不关用户是什么角色，都可以看见的路由
+   2. 异步理由：不同的用户（角色），需要过滤筛选出的路由，称之为异步路由
+   3. 任意路由：当路径出现错误的时候重定向 404
+3. 项目中已有的异步路由，与服务器返回的标记信息`进行对比过滤`出最终需要展示的理由。
+   1. 定义一个函数使用 `filter 方法` + `递归` 计算出异步路由与服务器返回的路由，返回当前用户需要展示的异步路由
+   2. 将计算出的路由信息`合并`
+   3. 给路由器添加新的路由
+
+### 路由权限管理（代码步骤）
+
+1. 用户登录，服务器根据用户信息返回数据，其中包含了用户可以访问哪些权限的路由。保存这些信息。
+![服务器根据用户信息返回数据](https://raw.githubusercontent.com/HaloBoys/PicGoMyDevice/main/img/20221106155010.png)
+![保存服务器返回的数据](https://raw.githubusercontent.com/HaloBoys/PicGoMyDevice/main/img/20221106155625.png)
+2. 把项目中的`路由进行拆分`
+拆分前：
+```javascript
+export const constantRoutes = [{
+    path: '/login',
+    component: () => import('@/views/login/index'),
+    hidden: true
+  },
+
+  {
+    path: '/404',
+    component: () => import('@/views/404'),
+    hidden: true
+  },
+
+  {
+    path: '/',
+    component: Layout,
+    redirect: '/dashboard',
+    children: [{
+      path: 'dashboard',
+      name: 'Dashboard',
+      component: () => import('@/views/dashboard/index'),
+      meta: {
+        title: '首页',
+        icon: 'dashboard'
+      }
+    }]
+  },
+  // 权限管理及子路由
+  {
+    name: 'Acl',
+    path: '/acl',
+    component: Layout,
+    redirect: '/acl/user/list',
+    meta: {
+      title: '权限管理',
+      icon: 'el-icon-lock'
+    },
+    children: [{
+        name: 'User',
+        path: 'user/list',
+        component: () => import('@/views/acl/user/list'),
+        meta: {
+          title: '用户管理',
+        },
+      },
+      {
+        name: 'Role',
+        path: 'role/list',
+        component: () => import('@/views/acl/role/list'),
+        meta: {
+          title: '角色管理',
+        },
+      },
+      {
+        name: 'RoleAuth',
+        path: 'role/auth/:id',
+        component: () => import('@/views/acl/role/roleAuth'),
+        meta: {
+          activeMenu: '/acl/role/list',
+          title: '角色授权',
+        },
+        hidden: true,
+      },
+      {
+        name: 'Permission',
+        path: 'permission/list',
+        component: () => import('@/views/acl/permission/list'),
+        meta: {
+          title: '菜单管理',
+        },
+      },
+    ]
+  },
+  // 商品管理及其子路由
+  {
+    name: 'Product',
+    path: '/product',
+    component: Layout,
+    meta: {
+      title: '商品管理',
+      icon: 'el-icon-goods'
+    },
+    // 子路由
+    children: [{
+      path: 'trademark',
+      name: 'TradeMark',
+      component: () => import('@/views/product/tradeMark'),
+      meta: {
+        title: '品牌管理',
+      }
+    }, {
+      path: 'attrmanage',
+      name: 'AttrManage',
+      component: () => import('@/views/product/attrManage'),
+      meta: {
+        title: '属性管理',
+      }
+    }, {
+      path: 'spumanage',
+      name: 'SpuManage',
+      component: () => import('@/views/product/spuManage'),
+      meta: {
+        title: 'SPU管理',
+      }
+    }, {
+      path: 'skumanage',
+      name: 'SkuManage',
+      component: () => import('@/views/product/skuManage'),
+      meta: {
+        title: 'SKU管理',
+      }
+    }]
+  },
+  // 404 page must be placed at the end !!!
+  {
+    path: '*',
+    redirect: '/404',
+    hidden: true
+  }
+]
+```
+拆分后：(1. 常量路由 2. 异步理由 3. 任意路由)
+```javascript
+// 1. 常量路由：就是不关用户是什么角色，都可以看见的路由
+export const constantRoutes = [{
+    path: '/login',
+    component: () => import('@/views/login/index'),
+    hidden: true
+  },
+
+  {
+    path: '/404',
+    component: () => import('@/views/404'),
+    hidden: true
+  },
+
+  {
+    path: '/',
+    component: Layout,
+    redirect: '/dashboard',
+    children: [{
+      path: 'dashboard',
+      name: 'Dashboard',
+      component: () => import('@/views/dashboard/index'),
+      meta: {
+        title: '首页',
+        icon: 'dashboard'
+      }
+    }]
+  },
+  // 404 page must be placed at the end !!!
+  {
+    path: '*',
+    redirect: '/404',
+    hidden: true
+  }
+]
+
+// 2. 异步路由：不同的用户（角色），需要过滤筛选出的路由，称之为异步路由
+export const asyncRoutes = [
+  // 权限管理及子路由
+  {
+    name: 'Acl',
+    path: '/acl',
+    component: Layout,
+    redirect: '/acl/user/list',
+    meta: {
+      title: '权限管理',
+      icon: 'el-icon-lock'
+    },
+    children: [{
+        name: 'User',
+        path: 'user/list',
+        component: () => import('@/views/acl/user/list'),
+        meta: {
+          title: '用户管理',
+        },
+      },
+      {
+        name: 'Role',
+        path: 'role/list',
+        component: () => import('@/views/acl/role/list'),
+        meta: {
+          title: '角色管理',
+        },
+      },
+      {
+        name: 'RoleAuth',
+        path: 'role/auth/:id',
+        component: () => import('@/views/acl/role/roleAuth'),
+        meta: {
+          activeMenu: '/acl/role/list',
+          title: '角色授权',
+        },
+        hidden: true,
+      },
+      {
+        name: 'Permission',
+        path: 'permission/list',
+        component: () => import('@/views/acl/permission/list'),
+        meta: {
+          title: '菜单管理',
+        },
+      },
+    ]
+  },
+  // 商品管理及其子路由
+  {
+    name: 'Product',
+    path: '/product',
+    component: Layout,
+    meta: {
+      title: '商品管理',
+      icon: 'el-icon-goods'
+    },
+    // 子路由
+    children: [{
+      path: 'trademark',
+      name: 'TradeMark',
+      component: () => import('@/views/product/tradeMark'),
+      meta: {
+        title: '品牌管理',
+      }
+    }, {
+      path: 'attrmanage',
+      name: 'AttrManage',
+      component: () => import('@/views/product/attrManage'),
+      meta: {
+        title: '属性管理',
+      }
+    }, {
+      path: 'spumanage',
+      name: 'SpuManage',
+      component: () => import('@/views/product/spuManage'),
+      meta: {
+        title: 'SPU管理',
+      }
+    }, {
+      path: 'skumanage',
+      name: 'SkuManage',
+      component: () => import('@/views/product/skuManage'),
+      meta: {
+        title: 'SKU管理',
+      }
+    }]
+  },
+]
+
+// 3. 任意路由：当路径出现错误的时候重定向 404
+export const anyRoutes = {
+  path: '*',
+  redirect: '/404',
+  hidden: true
+}
+```
+3. 项目中已有的异步路由，与服务器返回的标记信息`进行对比过滤`出最终需要展示的理由：
+   1. 在 vuex --> user.js 中定义一个数组（resAsyncRoutes）存储对比之后【项目中已有的异步路由，与服务器返回的标记信息进行对比最终需要展示的理由】
+   2. 在 vuex --> user.js 中提交 mutation，计算服务器当前用户需要展示的路由
+   ```javascript
+   // actions
+   commit('SET_RESASYNCROUTES', computedAsyncRoutes(asyncRoutes, data.routes))
+   // computedAsyncRoutes
+   // 定义一个函数：两个数组进行对比，对比出当前用户到底显示哪些异步路由
+   const computedAsyncRoutes = (asyncRoutes, routes) => {
+     return asyncRoutes.filter(item => {
+       if (routes.indexOf(item.name) != -1) {
+         // 递归：每一个 item 还有子路由
+         if (item.children && item.children.length) {
+           item.children = computedAsyncRoutes(item.children, routes)
+         }
+         return true
+       }
+     })
+   }
+   ```
+4. 合并路由
+```javascript
+state.resAllRoutes = constantRoutes.concat(state.resAsyncRoutes, anyRoutes)
+```
+5. 在 vuex --> user.js 中引入 router，并给路由器添加新的路由
+```javascript
+router.addRoutes(state.resAllRoutes)
+```
+6. 修改 vue-admin-template 源码，将路由指定为 vuex 仓库中计算出来的路由
+```diff
+# src>layout>components>Sidebar>index.vue
+computed: {
+ routes() {
+-   return this.$router.options.routes
++   return this.$store.state.user.resAllRoutes
+ },
+}
+```
+
+### 按钮权限管理
+
+不同的用户（角色）,有的用户的是可见按钮、当然有的用户不可见。
+
+实现思路：按钮的 v-show 显示与隐藏通过用户是否有这个权限来展示
